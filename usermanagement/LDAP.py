@@ -87,5 +87,5 @@ class LDAPServer:
     def _get_conn(self):
         return ldap.initialize(self.url)
 
-    def connect(self,user,passwd):
+    def connect(self,user = None,passwd = None):
         return LDAPConn(self,user,passwd)
