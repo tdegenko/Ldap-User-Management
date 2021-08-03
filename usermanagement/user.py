@@ -71,7 +71,7 @@ class User:
             self.conn.ldap.simple_bind_s(self.user_dn, self._passwd)
             self.authenticateed = True
             return True
-        except ldap.INVALID_CREDENTIALS:
+        except (ldap.INVALID_CREDENTIALS, ldap.UNWILLING_TO_PERFORM):
             return False
 
     def update_password(self, new_pw):

@@ -1,6 +1,10 @@
 import ldap, ldap.modlist
 class Group:
     @classmethod
+    def Groups(cls, connection):
+        return [cls(connection, name = connection.server.guest_group), cls(connection, name=connection.server.user_group)]
+
+    @classmethod
     def Guests(cls, connection):
         return cls(connection, name = connection.server.guest_group)
 
