@@ -33,9 +33,9 @@ class Group:
             raise RuntimeError('Must provide either group name, dn, or gidNumber')
 
         if len(target_info) > 1:
-            RuntimeError('Too many groups found')
+            raise RuntimeError('Too many groups found')
         if len(target_info) == 0:
-            RuntimeError('No groups found')
+            raise RuntimeError('No groups found')
 
         result = {
             'dn': target_info[0][0],

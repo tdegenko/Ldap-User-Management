@@ -1,6 +1,7 @@
 #from ldap3 import Server, Connection, ALL, NTLM, Tls
 import ldap, ldap.modlist
 from usermanagement.user import User
+from usermanagement.group import Group
 class LDAPConn:
     def __init__(self, server, user = None, passwd = None):
         self.server = server
@@ -51,7 +52,10 @@ class LDAPConn:
         return self.next_uid(domain,'gidNumber')
 
     def User(self, uid, passwd = None):
-        return User(self,uid, passwd)
+        return User(self, uid, passwd)
+
+    def Group(self, **kwargs):
+        return Group(self, **kwargs)
 
 
 class LDAPServer:
