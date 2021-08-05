@@ -12,13 +12,13 @@ class LDAPConn:
             self.user = None
 
     def __enter__(self):
-        if self.usser:
+        if self.user:
             self.user.authenticate()
         return self
 
     def __exit__(self, type, calue, traceback):
-        if not self.conn is None:
-            self.conn.unbind()
+        if not self.ldap is None:
+            self.ldap.unbind()
 
     def find_domain(self):
         target_info = self.ldap.search_s(self.server.base_domain_dn_str, ldap.SCOPE_SUBTREE, '(sambaDomainName=*)', attrlist=['dn', 'sambaDomainName','sambaSID'])
