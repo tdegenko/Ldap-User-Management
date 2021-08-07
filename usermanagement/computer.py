@@ -37,6 +37,11 @@ class Computer:
         computer.update_password(new_pw)
         return computer
 
+    @classmethod
+    def all(cls, conn):
+        computers = conn.ldap.search_s(conn.server.computer_dn_str,ldap.SCOPE_SUBTREE,'(uid=*)',attrlist=['uid'])
+        return [cls(conn, x[1]['uid'][0].decode()) for x in computers]
+
     def _find_computer(self, target):
         target_info = self.conn.ldap.search_s(self.conn.server.computer_dn_str,ldap.SCOPE_SUBTREE,ldap.dn.dn2str([[('uid',target,1)]]),attrlist=['dn'])
         if len(target_info) == 1:
