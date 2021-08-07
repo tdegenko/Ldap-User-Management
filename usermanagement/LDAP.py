@@ -82,6 +82,11 @@ class LDAPServer:
         self.user_group = user_group
         self.guest_group = guest_group
 
+    def __eq__(self, other):
+        if not isinstance(other, LDAPServer):
+            return False
+        return self.base_domain_dn_str == other.base_domain_dn_str and self.user_group == other.user_group and self.guest_group == other.guest_group
+
     def _uid_to_dn(cls, uid):
         return ldap.dn.dn2str([[('uid', uid, 1)]]+cls.user_dn)
 

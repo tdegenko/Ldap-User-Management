@@ -22,6 +22,11 @@ class Group:
         self.cn = group['cn']
         self.dn = group['dn']
 
+    def __eq__(self, other):
+        if not isinstance(other, Group):
+            return False
+        return self.conn.server == other.conn.server and self.gid == other.gid and self.cn == other.cn and self.dn == other.dn
+
     def _group_info(self, cn = None, gid = None, dn = None):
         target_info = []
         if gid is not None:

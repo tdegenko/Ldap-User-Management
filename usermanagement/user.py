@@ -101,6 +101,21 @@ class User:
 
         return results
 
+    def update_groups(self, primary = None, secondary = None):
+        groups = self.get_groups()
+        secondary = secondary.copy()
+        secondary.append(primary)
+        if primary is not None and  primary != groups['primary']:
+            self.change_primary_group(primary)
+        if secondary is not None:
+            for group in secondary:
+                if group not in groups['secondary'] and group != primary:
+                    self.add_group(group)
+            for group in groups['secondary']:
+                if group not in secondary and group != groups['primary']:
+                    self.remove_group(group)
+
+
     def add_group(self, group):
         group.add_user(self)
 
@@ -108,7 +123,15 @@ class User:
         group.remove_user(self)
 
     def change_primary_group(self, group):
-        raise NotImplementedError()
+        groups = self.get_groups()
+        if group not in groups['secondary']:
+            self.add_group(group)
+        try:
+            self.remove_group(groups['primary'])
+        except ldap.NO_SUCH_ATTRIBUTE:
+            pass
+        user_mod = [(ldap.MOD_REPLACE,'gidNumber',group.gid.encode())]
+        self.conn.ldap.modify_s(self.user_dn, user_mod)
 
     def delete(self):
         groups = self.get_groups()
