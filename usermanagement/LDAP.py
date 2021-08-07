@@ -63,7 +63,7 @@ class LDAPServer:
     #    tls = ldap3.Tls(validate=validate_tls)
     #    self.server = ldap3.Server('cheka.mithri.date', port=port, get_info=ldap3.ALL, use_ssl=True,tls=tls)
 
-    def __init__(self, url, base, user_base = None, group_base = None, guest_group = 'Domain Guests', user_group = 'Domain Users'):
+    def __init__(self, url, base, user_base = None, group_base = None, computer_base = None, guest_group = 'Domain Guests', user_group = 'Domain Users', computer_group = 'Domain Computers'):
         self.url = url
         self.base_domain_dn_str = base
 
@@ -79,19 +79,29 @@ class LDAPServer:
             self.group_dn_str = user_base
         self.group_dn = ldap.dn.str2dn(self.group_dn_str)
 
+        if computer_base is None:
+            self.computer_dn_str = 'ou=Computers, %s' % self.base_domain_dn_str
+        else:
+            self.computer_dn_str = user_base
+        self.computer_dn = ldap.dn.str2dn(self.computer_dn_str)
+
         self.user_group = user_group
         self.guest_group = guest_group
+        self.computer_group = computer_group
 
     def __eq__(self, other):
         if not isinstance(other, LDAPServer):
             return False
-        return self.base_domain_dn_str == other.base_domain_dn_str and self.user_group == other.user_group and self.guest_group == other.guest_group
+        return self.base_domain_dn_str == other.base_domain_dn_str and self.user_group == other.user_group and self.guest_group == other.guest_group and self.computer_group == self.computer_group
 
     def _uid_to_dn(cls, uid):
         return ldap.dn.dn2str([[('uid', uid, 1)]]+cls.user_dn)
 
     def _cn_to_group_dn(cls, cn):
         return ldap.dn.dn2str([[('cn', cn, 1)]]+cls.group_dn)
+
+    def _uid_to_computer_dn(cls, cn):
+        return ldap.dn.dn2str([[('uid', cn, 1)]]+cls.computer_dn)
 
     def _get_conn(self):
         return ldap.initialize(self.url)

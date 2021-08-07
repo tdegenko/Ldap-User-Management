@@ -13,6 +13,10 @@ class Group:
     def Users(cls, connection):
         return cls(connection, name = connection.server.user_group)
 
+    @classmethod
+    def Computers(cls, connection):
+        return cls(connection, name = connection.server.computer_group)
+
     keys = ['dn','cn','gidNumber']
 
     def __init__(self, connection, name = None, gid = None, dn = None):
