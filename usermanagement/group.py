@@ -2,7 +2,8 @@ import ldap, ldap.modlist
 class Group:
     @classmethod
     def Groups(cls, connection):
-        return [cls(connection, name = connection.server.guest_group), cls(connection, name=connection.server.user_group)]
+        groups = connection.ldap.search_s(connection.server.group_dn_str, ldap.SCOPE_SUBTREE,'(gidNumber=*)',attrlist=cls.keys)
+        return [cls(connection, dn = x) for x,_ in groups]
 
     @classmethod
     def Guests(cls, connection):
