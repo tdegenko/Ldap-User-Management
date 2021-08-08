@@ -2,6 +2,7 @@
 import ldap, ldap.modlist
 from usermanagement.user import User
 from usermanagement.group import Group
+from usermanagement.computer import Computer
 class LDAPConn:
     def __init__(self, server, user = None, passwd = None):
         self.server = server
@@ -56,6 +57,9 @@ class LDAPConn:
 
     def Group(self, **kwargs):
         return Group(self, **kwargs)
+
+    def Computer(self, uid):
+        return Computer(self, uid)
 
 
 class LDAPServer:
