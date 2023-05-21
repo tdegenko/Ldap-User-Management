@@ -2,9 +2,9 @@ import usermanagement.utils as utils
 from usermanagement.group import Group
 import ldap, ldap.modlist
 
-class User:
 
-    def __init__(self, connection, uid, passwd = None):
+class User:
+    def __init__(self, connection, uid, passwd=None):
         self.conn = connection
         self.uid = uid
         self.user_dn = self._find_user(uid)
@@ -12,38 +12,43 @@ class User:
         self.authenticated = False
 
     @classmethod
-    def add(cls, conn, new_user, name, new_pw, primary_group = None, additional_groups = []):
+    def add(
+        cls, conn, new_user, name, new_pw, primary_group=None, additional_groups=[]
+    ):
         if primary_group is None:
             primary_group = Group.Users(conn)
         user_dn = conn.server._uid_to_dn(new_user)
         domain, domain_info = conn.find_domain()
-        sid = '%s-%d' % (domain_info['sambaSID'][0].decode('utf8'), conn.next_rid(domain))
+        sid = "%s-%d" % (
+            domain_info["sambaSID"][0].decode("utf8"),
+            conn.next_rid(domain),
+        )
         user = {
-            'uid': new_user.encode(),
-            'uidNumber': str(conn.next_uid(domain)).encode('utf8'),
-            'gidNumber': primary_group.gid.encode(),
-            'cn': name[0].encode(),
-            'sn': name[1].encode(),
-            'objectClass': [
-                b'top',
-                b'person',
-                #b'organizationalPerson',
-                b'posixAccount',
-                b'shadowAccount',
-                #b'inetOrgPerson',
-                b'sambaSamAccount',
-                b'radiusprofile',
+            "uid": new_user.encode(),
+            "uidNumber": str(conn.next_uid(domain)).encode("utf8"),
+            "gidNumber": primary_group.gid.encode(),
+            "cn": name[0].encode(),
+            "sn": name[1].encode(),
+            "objectClass": [
+                b"top",
+                b"person",
+                # b'organizationalPerson',
+                b"posixAccount",
+                b"shadowAccount",
+                # b'inetOrgPerson',
+                b"sambaSamAccount",
+                b"radiusprofile",
             ],
-            'loginShell': b'/bin/bash',
-            'homeDirectory': ('/home/%s' % new_user).encode(),
-            'radiusTunnelType': b'VLAN',
-            'radiusTunnelMediumType': b'IEEE-802',
-            'radiusTunnelPrivateGroupId': b'100',
-            'sambaSID': sid.encode('utf8'),
-            'sambaNTPassword':[b'XXX'],
+            "loginShell": b"/bin/bash",
+            "homeDirectory": ("/home/%s" % new_user).encode(),
+            "radiusTunnelType": b"VLAN",
+            "radiusTunnelMediumType": b"IEEE-802",
+            "radiusTunnelPrivateGroupId": b"100",
+            "sambaSID": sid.encode("utf8"),
+            "sambaNTPassword": [b"XXX"],
         }
         user_add = ldap.modlist.addModlist(user)
-        conn.ldap.add_s(user_dn,user_add)
+        conn.ldap.add_s(user_dn, user_add)
         user = cls(conn, new_user)
         user.add_group(primary_group)
         for group in additional_groups:
@@ -53,18 +58,23 @@ class User:
 
     @classmethod
     def add_guest(cls, conn, guest, guest_name, guest_pw):
-        cls.add(conn, guest, guest_name, guest_pw, primary_group = Group.Guests(conn))
+        cls.add(conn, guest, guest_name, guest_pw, primary_group=Group.Guests(conn))
 
     def _find_user(self, target):
-        target_info = self.conn.ldap.search_s(self.conn.server.user_dn_str,ldap.SCOPE_SUBTREE,ldap.dn.dn2str([[('uid',target,1)]]),attrlist=['dn'])
+        target_info = self.conn.ldap.search_s(
+            self.conn.server.user_dn_str,
+            ldap.SCOPE_SUBTREE,
+            ldap.dn.dn2str([[("uid", target, 1)]]),
+            attrlist=["dn"],
+        )
         if len(target_info) == 1:
             return target_info[0][0]
         elif len(target_info) == 0:
             return None
         else:
-            raise RuntimeError('Too many users found')
+            raise RuntimeError("Too many users found")
 
-    def authenticate(self, passwd = None):
+    def authenticate(self, passwd=None):
         if passwd is None:
             passwd = self._passwd
         try:
@@ -76,7 +86,9 @@ class User:
 
     def update_password(self, new_pw):
         new_ntlm = utils.LDAPUtils.ntlmv1(new_pw)
-        ntlm_mod = ldap.modlist.modifyModlist({'sambaNTPassword':['*']},{'sambaNTPassword':[new_ntlm]})
+        ntlm_mod = ldap.modlist.modifyModlist(
+            {"sambaNTPassword": ["*"]}, {"sambaNTPassword": [new_ntlm]}
+        )
         self.conn.ldap.modify_s(self.user_dn, ntlm_mod)
         self.conn.ldap.passwd_s(self.user_dn, self._passwd, new_pw)
         if self._passwd is not None:
@@ -85,36 +97,41 @@ class User:
             self.authenticate()
 
     def get_groups(self):
-        target_info = self.conn.ldap.search_s(self.user_dn,ldap.SCOPE_BASE,attrlist=['memberOf','gidNumber'])
+        target_info = self.conn.ldap.search_s(
+            self.user_dn, ldap.SCOPE_BASE, attrlist=["memberOf", "gidNumber"]
+        )
 
         if len(target_info) > 1:
-            RuntimeError('Too many users results found')
+            RuntimeError("Too many users results found")
         if len(target_info) == 0:
-            RuntimeError('No groups found')
+            RuntimeError("No groups found")
         target_info = target_info[0][1]
 
-
         results = {
-            'primary': Group(connection = self.conn, gid = target_info['gidNumber'][0].decode()),
-            'secondary': [Group(connection = self.conn, dn = x.decode()) for x in target_info.get('memberOf',[])],
+            "primary": Group(
+                connection=self.conn, gid=target_info["gidNumber"][0].decode()
+            ),
+            "secondary": [
+                Group(connection=self.conn, dn=x.decode())
+                for x in target_info.get("memberOf", [])
+            ],
         }
 
         return results
 
-    def update_groups(self, primary = None, secondary = None):
+    def update_groups(self, primary=None, secondary=None):
         groups = self.get_groups()
         secondary = secondary.copy()
         secondary.append(primary)
-        if primary is not None and  primary != groups['primary']:
+        if primary is not None and primary != groups["primary"]:
             self.change_primary_group(primary)
         if secondary is not None:
             for group in secondary:
-                if group not in groups['secondary'] and group != primary:
+                if group not in groups["secondary"] and group != primary:
                     self.add_group(group)
-            for group in groups['secondary']:
-                if group not in secondary and group != groups['primary']:
+            for group in groups["secondary"]:
+                if group not in secondary and group != groups["primary"]:
                     self.remove_group(group)
-
 
     def add_group(self, group):
         group.add_user(self)
@@ -124,17 +141,17 @@ class User:
 
     def change_primary_group(self, group):
         groups = self.get_groups()
-        if group not in groups['secondary']:
+        if group not in groups["secondary"]:
             self.add_group(group)
         try:
-            self.remove_group(groups['primary'])
+            self.remove_group(groups["primary"])
         except ldap.NO_SUCH_ATTRIBUTE:
             pass
-        user_mod = [(ldap.MOD_REPLACE,'gidNumber',group.gid.encode())]
+        user_mod = [(ldap.MOD_REPLACE, "gidNumber", group.gid.encode())]
         self.conn.ldap.modify_s(self.user_dn, user_mod)
 
     def delete(self):
         groups = self.get_groups()
-        for group in groups['secondary']:
+        for group in groups["secondary"]:
             group.remove_user(self)
         self.conn.ldap.delete_s(self.user_dn)
